@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG Lab — Interactive Simulator</title>
+<style>
+  :root{--blue:#0078d4;--blue2:#106ebe;--ink:#242424;--muted:#616161;--line:#e1dfdd;--bg:#f5f5f5;--panel:#fff;--green:#107c10;--orange:#ca5010;--purple:#5c2d91;--shadow:0 2px 8px #0000000d}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",Arial,sans-serif}
+  button,input,textarea,select{font:inherit} button{cursor:pointer}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:13px max(20px,calc((100% - 1200px)/2));display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+  .msmark{display:grid;grid-template-columns:repeat(2,10px);grid-template-rows:repeat(2,10px);gap:2px}.msmark i:nth-child(1){background:#f25022}.msmark i:nth-child(2){background:#7fba00}.msmark i:nth-child(3){background:#00a4ef}.msmark i:nth-child(4){background:#ffb900}
+  .brand{font-weight:650;font-size:17px}.top-tag{margin-left:auto;color:#555;font-size:12px;border:1px solid var(--line);padding:4px 9px;border-radius:4px}
+  main{max-width:1200px;margin:26px auto;padding:0 20px 50px}.hero{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:22px}.eyebrow{color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+  h1{font-size:32px;line-height:1.2;margin:6px 0 10px;letter-spacing:-.6px}h2{font-size:19px;margin:0 0 8px}h3{font-size:15px;margin:0 0 6px}.sub{color:var(--muted);max-width:730px;margin:0}.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid #c8c6c4;background:#fff;color:var(--ink);padding:8px 13px;border-radius:4px;font-weight:600}.btn.primary{background:var(--blue);color:white;border-color:var(--blue)}.btn.primary:hover{background:var(--blue2)}.btn:disabled{opacity:.45;cursor:not-allowed}
+  .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:22px 0}.step{background:#fff;border:1px solid var(--line);border-radius:7px;padding:12px;display:flex;gap:9px;align-items:center;text-align:left;min-width:0}.step.active{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:#f0f7ff}.step.done .num{background:var(--green)}.num{width:27px;height:27px;border-radius:50%;background:#e1dfdd;display:grid;place-items:center;font-weight:700;flex-shrink:0}.step.active .num{background:var(--blue);color:white}.step strong{display:block;font-size:13px}.step small{display:block;color:var(--muted);font-size:11px}
+  .layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.8fr);gap:18px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}.panel-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.panel-body{padding:19px}.tag{font-size:11px;font-weight:700;border-radius:3px;padding:4px 7px;background:#f0f0f0;color:#505050}.tag.blue{background:#e5f1fb;color:#005a9e}.tag.green{background:#e7f5e7;color:#0b6a0b}.tag.orange{background:#fff4ce;color:#8a4b00}
+  .step-title{font-size:21px;margin:0 0 7px}.desc{color:var(--muted);margin:0 0 18px}.callout{padding:12px 14px;border-left:3px solid var(--blue);background:#f3f9fd;border-radius:0 4px 4px 0;margin:14px 0}.callout strong{display:block;margin-bottom:3px}.field{margin:14px 0}.field label{font-weight:650;display:block;margin-bottom:6px}.field textarea,.field input,.field select{width:100%;border:1px solid #8a8886;border-radius:4px;padding:10px;background:white;color:var(--ink)}textarea{resize:vertical;min-height:95px}.field small{color:var(--muted);display:block;margin-top:5px}.inline{display:flex;gap:9px;flex-wrap:wrap}.inline>*{flex:1;min-width:130px}
+  .doc-list,.chunk-list,.result-list{display:grid;gap:9px}.doc,.chunk,.result{border:1px solid var(--line);border-radius:6px;padding:11px 12px;background:#fff}.doc{display:flex;gap:10px;align-items:flex-start}.doc-icon{background:#fce8e6;color:#a4262c;border-radius:5px;padding:7px;font-size:12px;font-weight:800}.doc p,.chunk p,.result p{margin:4px 0 0;color:#555;font-size:13px}.mini{font-size:11px;color:var(--muted)}.chunk-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.vector{font-family:Consolas,monospace;background:#f6f6f6;border-radius:4px;padding:7px 9px;margin-top:8px;font-size:12px;color:#454545;overflow-wrap:anywhere}
+  .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.metric{background:#f8f8f8;border:1px solid var(--line);border-radius:6px;padding:11px}.metric b{font-size:21px;display:block}.metric span{font-size:11px;color:var(--muted)}
+  .right-stack{display:grid;gap:18px}.side-body{padding:16px}.status-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:13px}.status-row:last-child{border-bottom:0}.status-row span{color:var(--muted)}.progress{height:6px;background:#edebe9;border-radius:20px;overflow:hidden;margin-top:8px}.progress div{height:100%;background:var(--blue);width:0;transition:width .25s}.log{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap;background:#202020;color:#d7f7d7;border-radius:5px;padding:12px;min-height:95px;max-height:210px;overflow:auto}.answer{background:#f7fbff;border:1px solid #b4d6f2;border-radius:7px;padding:15px}.answer .label{font-size:11px;color:#005a9e;font-weight:800;letter-spacing:.07em;text-transform:uppercase}.answer p{margin:8px 0 0}.confidence{height:8px;background:#e1dfdd;border-radius:10px;overflow:hidden;margin:8px 0}.confidence div{height:100%;background:var(--green);width:0}
+  .quiz{margin-top:18px}.quiz-option{display:flex;gap:9px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:5px;margin:8px 0;cursor:pointer}.quiz-option input{margin-top:5px}.feedback{margin-top:10px;padding:10px;border-radius:5px;background:#f3f2f1}.footer{margin-top:20px;color:var(--muted);font-size:12px;text-align:center}.hidden{display:none!important}
+  @media(max-width:850px){.layout{grid-template-columns:1fr}.steps{grid-template-columns:repeat(2,1fr)}.hero{display:block}.hero-actions{margin-top:14px}.top-tag{display:none}}
+  @media(max-width:480px){main{padding:0 12px 30px}.steps{grid-template-columns:1fr}.metric-grid{grid-template-columns:1fr 1fr}.topbar{padding:12px}.brand{font-size:15px}h1{font-size:27px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="msmark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  <span class="brand">RAG Lab</span>
+  <span class="top-tag">Interactive learning simulator · Demo data only</span>
+</header>
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">AI learning lab</div>
+      <h1>See how RAG works, step by step</h1>
+      <p class="sub">Build a tiny retrieval-augmented generation workflow. Prepare documents, chunk them, create illustrative embeddings, retrieve relevant context, and generate a grounded answer—without retraining the LLM.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn" id="resetBtn">↺ Reset demo</button>
+      <button class="btn primary" id="runAllBtn">Run full workflow</button>
+    </div>
+  </section>
+
+  <nav class="steps" aria-label="RAG workflow steps">
+    <button class="step active" data-step="0"><span class="num">1</span><span><strong>Documents</strong><small>Knowledge source</small></span></button>
+    <button class="step" data-step="1"><span class="num">2</span><span><strong>Chunk & embed</strong><small>Prepare data</small></span></button>
+    <button class="step" data-step="2"><span class="num">3</span><span><strong>Index</strong><small>Store for search</small></span></button>
+    <button class="step" data-step="3"><span class="num">4</span><span><strong>Retrieve</strong><small>Find context</small></span></button>
+    <button class="step" data-step="4"><span class="num">5</span><span><strong>Generate</strong><small>Answer question</small></span></button>
+  </nav>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-head"><div><span class="mini" id="stageKicker">STAGE 01 / 05</span><h2 id="panelTitle">Your knowledge source</h2></div><span class="tag blue" id="stageTag">Setup</span></div>
+      <div class="panel-body">
+        <section class="stage" data-stage="0">
+          <h2 class="step-title">1. Add the documents</h2>
+          <p class="desc">In a real RAG application, these are the trusted sources the assistant can search. This demo starts with a small employee leave policy.</p>
+          <div class="doc-list" id="documents">
+            <article class="doc"><span class="doc-icon">DOC</span><div><strong>Employee Leave Policy</strong><p>Annual leave: 18 days per calendar year. Employees should submit leave requests at least 5 working days in advance. Sick leave: 8 days per year.</p><span class="mini">Source · HR policy v1.0</span></div></article>
+            <article class="doc"><span class="doc-icon">DOC</span><div><strong>Remote Work Policy</strong><p>Eligible employees may work remotely up to 2 days per week with manager approval. Customer data must only be accessed using approved company devices.</p><span class="mini">Source · Workplace policy v2.1</span></div></article>
+          </div>
+          <div class="field"><label for="newPolicy">Try adding a new policy</label><textarea id="newPolicy" placeholder="Example: Parental leave: eligible employees may take 12 weeks of paid parental leave."></textarea><small>Adding a document updates the demo knowledge source. It does not train the model.</small></div>
+          <button class="btn primary" id="addPolicyBtn">Add document</button>
+          <div class="callout"><strong>Think of it this way</strong>The documents are the library. RAG helps the LLM find the right page when someone asks a question.</div>
+        </section>
+
+        <section class="stage hidden" data-stage="1">
+          <h2 class="step-title">2. Chunk the text and create embeddings</h2>
+          <p class="desc">Chunking splits documents into manageable passages. An embedding model turns each passage into a numeric vector that represents aspects of its meaning.</p>
+          <div class="inline">
+            <div class="field"><label for="chunkSize">Chunk size (illustrative)</label><select id="chunkSize"><option value="short">Small chunks</option><option value="medium" selected>Medium chunks</option><option value="large">Large chunks</option></select></div>
+            <div class="field"><label for="overlap">Chunk overlap</label><select id="overlap"><option value="0">No overlap</option><option value="1" selected>Small overlap</option></select></div>
+          </div>
+          <button class="btn primary" id="chunkBtn">Chunk & create demo embeddings</button>
+          <div class="metric-grid"><div class="metric"><b id="chunkCount">0</b><span>Text chunks</span></div><div class="metric"><b id="embedCount">0</b><span>Demo vectors</span></div><div class="metric"><b>0</b><span>Model retrains</span></div></div>
+          <div class="chunk-list" id="chunks"><p class="mini">Run chunking to see the text passages and their illustrative vectors.</p></div>
+          <div class="callout"><strong>Important</strong>The vector values shown here are fake teaching examples, not real embeddings. In production, an embedding model calculates them.</div>
+        </section>
+
+        <section class="stage hidden" data-stage="2">
+          <h2 class="step-title">3. Store chunks in a searchable index</h2>
+          <p class="desc">Each chunk is stored with its text, source metadata and vector. A vector database or search index helps find relevant passages later.</p>
+          <div class="metric-grid"><div class="metric"><b id="indexChunks">0</b><span>Indexed chunks</span></div><div class="metric"><b id="indexDocs">0</b><span>Source documents</span></div><div class="metric"><b id="indexStatus">Not ready</b><span>Index status</span></div></div>
+          <button class="btn primary" id="indexBtn">Build / update index</button>
+          <div class="callout"><strong>New policy added?</strong>Re-run chunking and update the index. In a typical RAG system, you do not need to retrain the LLM just because a document changed.</div>
+          <div id="indexPreview" class="doc-list"><p class="mini">Your searchable index has not been built yet.</p></div>
+        </section>
+
+        <section class="stage hidden" data-stage="3">
+          <h2 class="step-title">4. Ask a question and retrieve context</h2>
+          <p class="desc">The question is compared with the indexed chunks. This simplified demo uses keyword overlap to illustrate relevance; real systems may use vector similarity, keyword search or hybrid retrieval.</p>
+          <div class="field"><label for="question">User question</label><input id="question" value="How many days of annual leave do employees get?" /></div>
+          <div class="inline">
+            <div class="field"><label for="topK">How many chunks to retrieve?</label><select id="topK"><option value="1">Top 1</option><option value="2" selected>Top 2</option><option value="3">Top 3</option></select></div>
+            <div class="field"><label for="searchMode">Search mode</label><select id="searchMode"><option value="semantic">Meaning-focused (demo)</option><option value="keyword">Keyword-focused (demo)</option></select></div>
+          </div>
+          <button class="btn primary" id="retrieveBtn">Search for relevant chunks</button>
+          <div id="retrievalMetrics" class="metric-grid"><div class="metric"><b>—</b><span>Chunks searched</span></div><div class="metric"><b>—</b><span>Results selected</span></div><div class="metric"><b>—</b><span>Top match score</span></div></div>
+          <div id="retrieved" class="result-list"><p class="mini">Build the index first, then retrieve context for your question.</p></div>
+        </section>
+
+        <section class="stage hidden" data-stage="4">
+          <h2 class="step-title">5. Generate an answer using retrieved context</h2>
+          <p class="desc">The LLM receives the question plus the retrieved passages. It uses those passages as context to formulate an answer. This simulator uses a rule-based mock answer, not a live LLM.</p>
+          <div class="field"><label for="finalQuestion">Question to answer</label><input id="finalQuestion" value="How many days of annual leave do employees get?" /></div>
+          <button class="btn primary" id="generateBtn">Generate grounded demo answer</button>
+          <div id="answerBox" class="answer" style="margin-top:15px">
+            <div class="label">Generated answer · Demo</div><p>Retrieve relevant context first, then generate an answer.</p>
+          </div>
+          <div class="callout"><strong>RAG is not a guarantee of truth</strong>Answer quality depends on source quality, retrieval quality, and how faithfully the model uses the retrieved context. Production systems should evaluate answers and show citations where possible.</div>
+        </section>
+
+        <div class="inline" style="justify-content:space-between;margin-top:22px">
+          <button class="btn" id="backBtn">← Previous</button><button class="btn primary" id="nextBtn">Next step →</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right-stack">
+      <section class="panel">
+        <div class="panel-head"><h2>Workflow status</h2><span class="tag" id="statusTag">Not started</span></div>
+        <div class="side-body">
+          <div class="status-row"><span>Documents loaded</span><strong id="sDocs">2</strong></div>
+          <div class="status-row"><span>Chunking complete</span><strong id="sChunk">No</strong></div>
+          <div class="status-row"><span>Search index ready</span><strong id="sIndex">No</strong></div>
+          <div class="status-row"><span>Relevant context found</span><strong id="sRetrieve">No</strong></div>
+          <div class="status-row"><span>Answer generated</span><strong id="sAnswer">No</strong></div>
+          <div class="progress"><div id="progressBar"></div></div><div class="mini" id="progressText" style="margin-top:7px">0 of 5 stages completed</div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>System activity</h2><span class="tag green">Live demo log</span></div>
+        <div class="side-body"><div class="log" id="log">[Ready] RAG Lab initialized.\n[Info] This simulator runs locally in your browser.\n[Note] No real model training or external API calls.</div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Remember the difference</h2></div>
+        <div class="side-body">
+          <div class="status-row"><strong>Training</strong><span>Changes model parameters</span></div>
+          <div class="status-row"><strong>Embedding</strong><span>Represents text as numbers</span></div>
+          <div class="status-row"><strong>Retrieval</strong><span>Finds useful source passages</span></div>
+          <div class="status-row"><strong>Generation</strong><span>LLM writes an answer from context</span></div>
+          <div class="callout"><strong>PM takeaway</strong>RAG can make current, private or specialized knowledge available without retraining the LLM for every document update.</div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="panel quiz">
+    <div class="panel-head"><h2>Quick knowledge check</h2><span class="tag orange">Check your understanding</span></div>
+    <div class="panel-body">
+      <p><strong>A company uploads a new leave policy. The RAG index is updated. What normally happens next?</strong></p>
+      <label class="quiz-option"><input type="radio" name="quiz" value="A"> A. The LLM must always be retrained on every policy update.</label>
+      <label class="quiz-option"><input type="radio" name="quiz" value="B"> B. The system can retrieve relevant chunks from the updated index and pass them to the LLM as context.</label>
+      <label class="quiz-option"><input type="radio" name="quiz" value="C"> C. The embedding vectors automatically change the LLM's weights.</label>
+      <button class="btn primary" id="checkQuiz">Check answer</button>
+      <div class="feedback hidden" id="quizFeedback"></div>
+    </div>
+  </section>
+  <p class="footer">Microsoft-inspired visual styling, not an official Microsoft product. All content and vectors are illustrative. No external services are used.</p>
+</main>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  let docs = [
+    {name:"Employee Leave Policy", text:"Annual leave: 18 days per calendar year. Employees should submit leave requests at least 5 working days in advance. Sick leave: 8 days per year.", source:"HR policy v1.0"},
+    {name:"Remote Work Policy", text:"Eligible employees may work remotely up to 2 days per week with manager approval. Customer data must only be accessed using approved company devices.", source:"Workplace policy v2.1"}
+  ];
+  let chunks=[], indexed=false, retrieved=[], generated=false, current=0, completed={docs:true,chunk:false,index:false,retrieve:false,answer:false};
+  const logEl=$("#log");
+  function log(msg){logEl.textContent += "\n"+msg;logEl.scrollTop=logEl.scrollHeight;}
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function renderDocs(){
+    $("#documents").innerHTML=docs.map((d,i)=>`<article class="doc"><span class="doc-icon">DOC</span><div><strong>${esc(d.name)}</strong><p>${esc(d.text)}</p><span class="mini">Source · ${esc(d.source)}</span></div></article>`).join("");
+    $("#sDocs").textContent=docs.length;
+  }
+  function setStage(n){
+    current=Math.max(0,Math.min(4,n));
+    $$(".stage").forEach(el=>el.classList.toggle("hidden",+el.dataset.stage!==current));
+    $$(".step").forEach((el,i)=>{el.classList.toggle("active",i===current);el.classList.toggle("done",[completed.docs,completed.chunk,completed.index,completed.retrieve,completed.answer][i]);});
+    const names=["Your knowledge source","Chunking & embeddings","Searchable index","Retrieval results","Grounded answer"];
+    const tags=["Setup","Preparation","Storage","Search","Generation"];
+    $("#panelTitle").textContent=names[current];$("#stageKicker").textContent=`STAGE 0${current+1} / 05`;$("#stageTag").textContent=tags[current];
+    $("#backBtn").disabled=current===0;$("#nextBtn").disabled=current===4;
+  }
+  function updateStatus(){
+    const count=[completed.docs,completed.chunk,completed.index,completed.retrieve,completed.answer].filter(Boolean).length;
+    $("#sChunk").textContent=completed.chunk?"Yes":"No";$("#sIndex").textContent=completed.index?"Yes":"No";$("#sRetrieve").textContent=completed.retrieve?"Yes":"No";$("#sAnswer").textContent=completed.answer?"Yes":"No";
+    $("#progressBar").style.width=(count/5*100)+"%";$("#progressText").textContent=`${count} of 5 stages completed`;
+    $("#statusTag").textContent=count===5?"Complete":count===0?"Not started":"In progress";
+    $("#statusTag").className="tag "+(count===5?"green":"blue");
+    $$(".step").forEach((el,i)=>el.classList.toggle("done",[completed.docs,completed.chunk,completed.index,completed.retrieve,completed.answer][i]));
+  }
+  function tokenize(s){return s.toLowerCase().match(/[a-z0-9]+/g)||[];}
+  function makeChunks(){
+    const mode=$("#chunkSize").value, overlap=$("#overlap").value==="1";
+    const maxWords=mode==="short"?15:mode==="large"?42:26;
+    chunks=[];
+    docs.forEach((d,di)=>{
+      const sentences=d.text.match(/[^.!?]+[.!?]*/g)||[d.text];
+      let currentText="", count=0, part=1;
+      sentences.forEach(sentence=>{
+        const words=sentence.trim().split(/\s+/);
+        if(currentText && count+words.length>maxWords){
+          chunks.push({id:"C"+(chunks.length+1),doc:d.name,source:d.source,text:currentText.trim()});
+          const tail=overlap?currentText.trim().split(/\s+/).slice(-3).join(" "):"";
+          currentText=tail?tail+" "+sentence.trim():sentence.trim();count=currentText.split(/\s+/).length;part++;
+        }else{currentText+=(currentText?" ":"")+sentence.trim();count+=words.length;}
+      });
+      if(currentText.trim())chunks.push({id:"C"+(chunks.length+1),doc:d.name,source:d.source,text:currentText.trim()});
+    });
+    chunks.forEach((c,i)=>{const t=tokenize(c.text);c.vector=[(t.length*0.17+i*0.11).toFixed(2),(t.filter(x=>x.length>5).length*.13+.21).toFixed(2),(t.filter(x=>["leave","policy","work","days","employee"].includes(x)).length*.19+.08).toFixed(2)];});
+    completed.chunk=true;indexed=false;completed.index=false;retrieved=[];completed.retrieve=false;completed.answer=false;generated=false;
+    $("#chunkCount").textContent=chunks.length;$("#embedCount").textContent=chunks.length;
+    $("#chunks").innerHTML=chunks.map(c=>`<article class="chunk"><div class="chunk-top"><strong>${c.id} · ${esc(c.doc)}</strong><span class="tag blue">Chunk</span></div><p>${esc(c.text)}</p><div class="vector">Demo vector: [${c.vector.join(", ")}]</div></article>`).join("");
+    log(`[Chunking] Split ${docs.length} document(s) into ${chunks.length} chunks.`);
+    log("[Embedding] Created illustrative vectors. These are not real model embeddings.");
+    updateStatus();
+  }
+  function buildIndex(){
+    if(!completed.chunk){log("[Blocked] Chunk documents first.");setStage(1);return;}
+    indexed=true;completed.index=true;completed.retrieve=false;completed.answer=false;retrieved=[];generated=false;
+    $("#indexChunks").textContent=chunks.length;$("#indexDocs").textContent=docs.length;$("#indexStatus").textContent="Ready";
+    $("#indexPreview").innerHTML=chunks.map(c=>`<article class="doc"><span class="doc-icon">IDX</span><div><strong>${c.id} · ${esc(c.doc)}</strong><p>${esc(c.text)}</p><span class="mini">Stored with demo vector and source metadata</span></div></article>`).join("");
+    log(`[Index] Built searchable demo index with ${chunks.length} chunks from ${docs.length} documents.`);
+    updateStatus();
+  }
+  function scoreChunk(c,q){
+    const qTokens=tokenize(q).filter(t=>t.length>2), cTokens=tokenize(c.text);
+    if(!qTokens.length)return 0;
+    const synonym={annual:["yearly","leave"],days:["day"],employee:["employees","staff"],get:["receive","allow"],remote:["work"],sick:["illness"]};
+    let hits=0;
+    qTokens.forEach(t=>{
+      if(cTokens.includes(t))hits+=1;
+      else if((synonym[t]||[]).some(s=>cTokens.includes(s)))hits+=.65;
+      else if($("#searchMode").value==="semantic" && t.endsWith("s") && cTokens.includes(t.slice(0,-1)))hits+=.7;
+    });
+    // Add a small topical boost for key concepts; this is a teaching heuristic, not vector similarity.
+    const q=qTokens.join(" ");
+    if(/annual|leave|holiday/.test(q)&&/annual|leave|sick/.test(cTokens.join(" ")))hits+=1.2;
+    if(/remote|home|device/.test(q)&&/remote|device|manager/.test(cTokens.join(" ")))hits+=1.2;
+    return Math.min(0.99,hits/Math.max(3,qTokens.length+1));
+  }
+  function retrieve(){
+    if(!indexed){log("[Blocked] Build/update the index first.");setStage(2);return;}
+    const q=$("#question").value.trim();if(!q){alert("Enter a question first.");return;}
+    retrieved=chunks.map(c=>({...c,score:scoreChunk(c,q)})).sort((a,b)=>b.score-a.score).slice(0,+$("#topK").value);
+    completed.retrieve=true;completed.answer=false;generated=false;
+    $("#retrievalMetrics").innerHTML=`<div class="metric"><b>${chunks.length}</b><span>Chunks searched</span></div><div class="metric"><b>${retrieved.length}</b><span>Results selected</span></div><div class="metric"><b>${retrieved[0]?Math.round(retrieved[0].score*100)+"%":"—"}</b><span>Top match score*</span></div>`;
+    $("#retrieved").innerHTML=retrieved.map((c,i)=>`<article class="result"><div class="chunk-top"><strong>${i+1}. ${c.id} · ${esc(c.doc)}</strong><span class="tag ${i===0?"green":"blue"}">${Math.round(c.score*100)}% demo score</span></div><p>${esc(c.text)}</p><span class="mini">Source · ${esc(c.source)}</span></article>`).join("");
+    log(`[Retrieval] Query: "${q}"`);
+    retrieved.forEach((c,i)=>log(`  ${i+1}. ${c.id} — demo relevance ${Math.round(c.score*100)}%`));
+    log("[Retrieval] Selected chunks are ready to pass to the LLM as context.");
+    updateStatus();
+  }
+  function generate(){
+    if(!completed.retrieve||!retrieved.length){log("[Blocked] Retrieve relevant context first.");setStage(3);return;}
+    const q=$("#finalQuestion").value.trim()||$("#question").value.trim();
+    const context=retrieved.map(c=>c.text).join(" ");
+    const relevant=retrieved.filter(c=>c.score>0.08);
+    let answer="I couldn't find enough relevant information in the retrieved passages to answer confidently. Try a more specific question or improve the source documents.";
+    let citation="No sufficiently relevant source";
+    if(relevant.length){
+      citation=relevant.map(c=>c.source).join("; ");
+      if(/annual|yearly|leave/.test(q.toLowerCase()) && /annual leave/i.test(context)){
+        const m=context.match(/annual leave:\s*([^.;]+)/i);answer=m?`The policy says ${m[1].trim()}.`:"The retrieved policy mentions annual leave, but the exact allowance is unclear in this context.";
+      }else if(/sick|illness/.test(q.toLowerCase())&&/sick leave/i.test(context)){
+        const m=context.match(/sick leave:\s*([^.;]+)/i);answer=m?`The policy says ${m[1].trim()}.`:"The policy mentions sick leave, but the exact allowance was not clearly retrieved.";
+      }else if(/remote|work from home|home/.test(q.toLowerCase())&&/remotely/i.test(context)){
+        const m=context.match(/work remotely up to\s*([^.;]+)/i);answer=m?`Eligible employees may work remotely up to ${m[1].trim()}. Manager approval is required.`:"The retrieved policy discusses remote work; check the full policy for exact conditions.";
+      }else if(/advance|submit|notice/.test(q.toLowerCase())&&/leave requests/i.test(context)){
+        const m=context.match(/at least\s*([^.;]+)\s+in advance/i);answer=m?`Leave requests should be submitted at least ${m[1].trim()} in advance.`:"The retrieved context mentions advance notice, but the exact timing was unclear.";
+      }else{
+        answer=`Based on the retrieved context: ${relevant[0].text}`;
+      }
+    }
+    $("#answerBox").innerHTML=`<div class="label">Generated answer · Rule-based demo</div><p>${esc(answer)}</p><div class="mini" style="margin-top:10px">Source context: ${esc(citation)}</div><div class="mini" style="margin-top:5px">This is a simulated answer, not a live LLM response.</div>`;
+    completed.answer=true;generated=true;log("[Generation] Combined the question with retrieved text and produced a rule-based demo answer.");log("[Note] Real LLM output can be wrong even when RAG supplies context.");updateStatus();
+  }
+  $("#addPolicyBtn").addEventListener("click",()=>{
+    const text=$("#newPolicy").value.trim();if(!text){alert("Enter some policy text first.");return;}
+    docs.push({name:"New Policy "+(docs.length-1),text,source:"User-added demo document"});
+    $("#newPolicy").value="";renderDocs();completed.chunk=false;completed.index=false;completed.retrieve=false;completed.answer=false;indexed=false;chunks=[];retrieved=[];
+    $("#chunks").innerHTML='<p class="mini">New document added. Re-run chunking and update the index.</p>';
+    $("#indexPreview").innerHTML='<p class="mini">Index needs to be updated.</p>';
+    log(`[Documents] Added a new document (${text.split(/\s+/).length} words).`);
+    log("[Info] Existing chunks/index are now marked stale. No LLM retraining occurred.");
+    updateStatus();
+  });
+  $("#chunkBtn").addEventListener("click",makeChunks);
+  $("#indexBtn").addEventListener("click",buildIndex);
+  $("#retrieveBtn").addEventListener("click",retrieve);
+  $("#generateBtn").addEventListener("click",generate);
+  $("#nextBtn").addEventListener("click",()=>setStage(current+1));
+  $("#backBtn").addEventListener("click",()=>setStage(current-1));
+  $$(".step").forEach(el=>el.addEventListener("click",()=>setStage(+el.dataset.step)));
+  $("#runAllBtn").addEventListener("click",()=>{
+    if(!completed.chunk)makeChunks();
+    if(!indexed)buildIndex();
+    setStage(3);retrieve();
+    if(completed.retrieve){$("#finalQuestion").value=$("#question").value;setStage(4);generate();}
+    log("[Workflow] Full workflow run completed.");
+  });
+  $("#resetBtn").addEventListener("click",()=>{
+    docs=[
+      {name:"Employee Leave Policy",text:"Annual leave: 18 days per calendar year. Employees should submit leave requests at least 5 working days in advance. Sick leave: 8 days per year.",source:"HR policy v1.0"},
+      {name:"Remote Work Policy",text:"Eligible employees may work remotely up to 2 days per week with manager approval. Customer data must only be accessed using approved company devices.",source:"Workplace policy v2.1"}
+    ];
+    chunks=[];indexed=false;retrieved=[];generated=false;completed={docs:true,chunk:false,index:false,retrieve:false,answer:false};
+    $("#newPolicy").value="";$("#question").value="How many days of annual leave do employees get?";$("#finalQuestion").value="How many days of annual leave do employees get?";
+    $("#chunks").innerHTML='<p class="mini">Run chunking to see the text passages and their illustrative vectors.</p>';
+    $("#indexPreview").innerHTML='<p class="mini">Your searchable index has not been built yet.</p>';
+    $("#retrieved").innerHTML='<p class="mini">Build the index first, then retrieve context for your question.</p>';
+    $("#answerBox").innerHTML='<div class="label">Generated answer · Demo</div><p>Retrieve relevant context first, then generate an answer.</p>';
+    $("#chunkCount").textContent="0";$("#embedCount").textContent="0";$("#indexChunks").textContent="0";$("#indexDocs").textContent="0";$("#indexStatus").textContent="Not ready";
+    logEl.textContent="[Ready] Demo reset.\n[Info] No real model training or external API calls.";
+    renderDocs();setStage(0);updateStatus();
+  });
+  $("#checkQuiz").addEventListener("click",()=>{
+    const selected=$('input[name="quiz"]:checked');const box=$("#quizFeedback");box.classList.remove("hidden");
+    if(!selected){box.textContent="Choose an answer first.";return;}
+    if(selected.value==="B"){box.innerHTML="<strong>Correct.</strong> RAG retrieves relevant passages from the updated index and supplies them to the LLM as context. Updating a document usually requires reprocessing/indexing it—not retraining the LLM.";}
+    else if(selected.value==="A"){box.innerHTML="<strong>Not quite.</strong> Retraining is not normally required for every policy update. RAG can retrieve the new document from the updated index at question time.";}
+    else{box.innerHTML="<strong>Not quite.</strong> Embeddings are representations used for retrieval; they do not automatically modify the LLM's weights.";}
+  });
+  renderDocs();setStage(0);updateStatus();
+})();
+</script>
+</body>
+</html>
